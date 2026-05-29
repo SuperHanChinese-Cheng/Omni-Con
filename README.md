@@ -21,7 +21,7 @@ Convert anything to anything. PDF ↔ Word, PowerPoint, Excel, images, HTML, Mar
 ## Quick Start
 
 ```bash
-git clone https://github.com/yourname/omnicon.git
+git clone https://github.com/SuperHanChinese-Cheng/Omni-Con.git
 cd omnicon
 python -m venv .venv
 source .venv/bin/activate  # or .venv\Scripts\activate on Windows
@@ -40,4 +40,4 @@ mypy src/                 # type check
 
 ## License
 
-MIT
+Proprietary. Copyright (c) 2026 Chenglin Qiu (SHC - Super Han Chinese). All rights reserved. See [LICENSE](LICENSE) for details.
