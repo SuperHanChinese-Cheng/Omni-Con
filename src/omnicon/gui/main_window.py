@@ -10,6 +10,7 @@ from PySide6.QtGui import QDragEnterEvent, QDropEvent
 from PySide6.QtWidgets import (
     QComboBox,
     QFileDialog,
+    QFrame,
     QHBoxLayout,
     QLabel,
     QMainWindow,
@@ -32,8 +33,11 @@ from omnicon.engines.image_engine import ImageEngine
 from omnicon.engines.office_engine import OfficeEngine
 from omnicon.engines.pandoc_engine import PandocEngine
 from omnicon.engines.pdf_engine import PDFEngine
+from omnicon.engines.table_engine import TableEngine
 from omnicon.engines.text_engine import TextEngine
 from omnicon.gui.pdf_tools_dialog import PDFToolsDialog
+from omnicon.gui.settings_dialog import SettingsDialog, load_default_output_dir, load_libreoffice_path
+from omnicon.utils.updater import UpdateWorker
 
 logger = logging.getLogger(__name__)
 
@@ -172,13 +176,18 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(600, 500)
         self.resize(700, 550)
 
+        # Feed the user-configured LibreOffice path (if any) into OfficeEngine
+        # so it doesn't fall back to its own auto-detect when a path is saved.
+        lo_path = load_libreoffice_path()
+
         self._registry = EngineRegistry()
         self._registry.register(PDFEngine())
         self._registry.register(ImageEngine())
         self._registry.register(TextEngine())
         self._registry.register(HTMLEngine())
         self._registry.register(PandocEngine())
-        self._registry.register(OfficeEngine())
+        self._registry.register(TableEngine())
+        self._registry.register(OfficeEngine(soffice_path=lo_path))
         self._dispatcher = ConversionDispatcher(self._registry)
         self._thread_pool = QThreadPool.globalInstance()
 
@@ -188,6 +197,74 @@ class MainWindow(QMainWindow):
 
         self._build_menu_bar()
         self._build_ui()
+        self._check_for_updates()
+
+    # ------------------------------------------------------------------
+    # Auto-update check
+    # ------------------------------------------------------------------
+
+    def _check_for_updates(self) -> None:
+        """Kick off a non-blocking update check against GitHub Releases.
+
+        Runs once per session in a thread-pool thread. If a newer version
+        is found, a dismissible info banner is shown at the top of the
+        window. Network or API failures are silently logged.
+        """
+        self._update_worker = UpdateWorker()
+        self._update_worker.signals.update_available.connect(
+            self._show_update_banner
+        )
+        self._thread_pool.start(self._update_worker)
+
+    def _show_update_banner(self, tag: str, html_url: str) -> None:
+        """Display a non-intrusive info bar when a new version is available.
+
+        Args:
+            tag: The release tag, e.g. ``'v0.2.0'``.
+            html_url: URL to the GitHub release page.
+        """
+        banner = QFrame(self.centralWidget())
+        banner.setStyleSheet(
+            "QFrame {"
+            "  background: #e8f4fd;"
+            "  border: 1px solid #b3d9f2;"
+            "  border-radius: 6px;"
+            "  padding: 6px 12px;"
+            "}"
+        )
+        banner_layout = QHBoxLayout(banner)
+        banner_layout.setContentsMargins(8, 4, 8, 4)
+
+        info_label = QLabel(
+            f'A new version of OmniCon (<b>{tag}</b>) is available! '
+            f'<a href="{html_url}">Download it here</a>.'
+        )
+        info_label.setOpenExternalLinks(True)
+        info_label.setStyleSheet("color: #0b5394; font-size: 12px;")
+        banner_layout.addWidget(info_label)
+
+        banner_layout.addStretch()
+
+        dismiss_btn = QPushButton("Dismiss")
+        dismiss_btn.setFixedHeight(24)
+        dismiss_btn.setStyleSheet(
+            "QPushButton {"
+            "  background: transparent;"
+            "  color: #0b5394;"
+            "  border: 1px solid #0b5394;"
+            "  border-radius: 4px;"
+            "  padding: 2px 10px;"
+            "  font-size: 11px;"
+            "}"
+            "QPushButton:hover { background: #d0e8f7; }"
+        )
+        dismiss_btn.clicked.connect(banner.deleteLater)
+        banner_layout.addWidget(dismiss_btn)
+
+        # Insert at the top of the central widget's layout (index 0)
+        central_layout = self.centralWidget().layout()
+        central_layout.insertWidget(0, banner)
+        logger.info("Update banner shown for %s", tag)
 
     def _build_menu_bar(self) -> None:
         """Create the application menu bar."""
@@ -197,6 +274,8 @@ class MainWindow(QMainWindow):
         file_menu = menu_bar.addMenu("&File")
         file_menu.addAction("&Browse Files...", self.browse_files, "Ctrl+O")
         file_menu.addAction("&PDF Tools...", self._open_pdf_tools)
+        file_menu.addSeparator()
+        file_menu.addAction("&Settings...", self._open_settings, "Ctrl+,")
         file_menu.addSeparator()
         file_menu.addAction("E&xit", self.close, "Ctrl+Q")
 
@@ -272,7 +351,9 @@ class MainWindow(QMainWindow):
 
         main_layout.addLayout(controls)
 
-        self._output_dir = Path.home() / "Desktop"
+        # Load the default output directory from QSettings instead of
+        # hardcoding ~/Desktop.
+        self._output_dir = load_default_output_dir()
         self._output_label = QLabel(f"Output: {self._output_dir}")
         self._output_label.setStyleSheet("color: #666; font-size: 11px;")
         main_layout.addWidget(self._output_label)
@@ -391,6 +472,31 @@ class MainWindow(QMainWindow):
         """Open the PDF Split & Merge dialog."""
         dialog = PDFToolsDialog(self)
         dialog.exec()
+
+    def _open_settings(self) -> None:
+        """Open the Settings dialog and reload state on accept."""
+        dialog = SettingsDialog(self)
+        if dialog.exec() == SettingsDialog.DialogCode.Accepted:
+            self._apply_settings()
+
+    def _apply_settings(self) -> None:
+        """Reload persisted settings into the running application.
+
+        Called after the Settings dialog is accepted so that changes
+        (output directory, LibreOffice path) take effect immediately.
+        """
+        # Refresh the default output directory
+        self._output_dir = load_default_output_dir()
+        self._output_label.setText(f"Output: {self._output_dir}")
+
+        # Replace the existing OfficeEngine with one that uses the
+        # (possibly changed) LibreOffice path.
+        lo_path = load_libreoffice_path()
+        self._registry._engines = [
+            e for e in self._registry._engines if not isinstance(e, OfficeEngine)
+        ]
+        self._registry.register(OfficeEngine(soffice_path=lo_path))
+        logger.info("Settings applied — output dir: %s, LO path: %s", self._output_dir, lo_path)
 
     def _check_all_done(self) -> None:
         pending = any(
