@@ -37,8 +37,7 @@ coverage.xml
 Thumbs.db
 
 # Project-specific
-CLAUDE.local.md
 *.log
 
-# Claude Code local settings
+# Local dev tooling
 .claude/

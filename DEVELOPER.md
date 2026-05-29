@@ -41,7 +41,7 @@ pyinstaller omnicon.spec --noconfirm
 ## Project structure
 ```
 omnicon/
-├── CLAUDE.md              # You are here
+├── DEVELOPER.md           # Developer guide
 ├── pyproject.toml         # Project config + dependencies
 ├── requirements.txt       # Pinned deps for reproducibility
 ├── omnicon.spec           # PyInstaller spec (generated later)
@@ -85,10 +85,8 @@ omnicon/
 │   ├── ROADMAP.md
 │   ├── ARCHITECTURE.md
 │   └── CONVENTIONS.md
-├── scripts/
-│   └── check_deps.py      # CLI script to verify system deps
-└── .claude/
-    └── settings.json       # Claude Code project settings
+└── scripts/
+    └── check_deps.py      # CLI script to verify system deps
 ```
 
 ## Code style

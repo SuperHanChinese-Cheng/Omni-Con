@@ -13,7 +13,7 @@
 - [ ] Code signing (Authenticode)
 
 ## Done
-- [x] Project scaffold (CLAUDE.md, docs, pyproject.toml, source structure)
+- [x] Project scaffold (DEVELOPER.md, docs, pyproject.toml, source structure)
 - [x] Initialize git repo
 - [x] Set up virtual environment and install deps
 - [x] Fix pyproject.toml build-backend (was invalid setuptools path)
