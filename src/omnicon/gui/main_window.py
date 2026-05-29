@@ -1,3 +1,5 @@
+# Copyright (c) 2026 Chenglin Qiu (SHC - Super Han Chinese). All rights reserved.
+# Licensed under the OmniCon Proprietary License. See LICENSE for details.
 """Main application window with drag-drop zone and conversion queue."""
 
 import logging
@@ -11,6 +13,8 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QMainWindow,
+    QMenuBar,
+    QMessageBox,
     QProgressBar,
     QPushButton,
     QScrollArea,
@@ -164,7 +168,7 @@ class MainWindow(QMainWindow):
 
     def __init__(self) -> None:
         super().__init__()
-        self.setWindowTitle("OmniCon — Universal File Converter")
+        self.setWindowTitle("OmniCon — Universal File Converter | by Chenglin Qiu (SHC)")
         self.setMinimumSize(600, 500)
         self.resize(700, 550)
 
@@ -182,7 +186,41 @@ class MainWindow(QMainWindow):
         self._job_widgets: list[JobWidget] = []
         self._active_workers: list[ConversionWorker] = []
 
+        self._build_menu_bar()
         self._build_ui()
+
+    def _build_menu_bar(self) -> None:
+        """Create the application menu bar."""
+        menu_bar = self.menuBar()
+
+        # File menu
+        file_menu = menu_bar.addMenu("&File")
+        file_menu.addAction("&Browse Files...", self.browse_files, "Ctrl+O")
+        file_menu.addAction("&PDF Tools...", self._open_pdf_tools)
+        file_menu.addSeparator()
+        file_menu.addAction("E&xit", self.close, "Ctrl+Q")
+
+        # Help menu
+        help_menu = menu_bar.addMenu("&Help")
+        help_menu.addAction("&About OmniCon", self._show_about)
+
+    def _show_about(self) -> None:
+        """Show the About dialog with author and version info."""
+        QMessageBox.about(
+            self,
+            "About OmniCon",
+            "<h2>OmniCon</h2>"
+            "<p><b>Universal Desktop File Converter</b></p>"
+            "<p>Version 0.1.0</p>"
+            "<hr>"
+            "<p>Created by <b>Chenglin Qiu (SHC - Super Han Chinese)</b></p>"
+            "<p>Copyright &copy; 2026 Chenglin Qiu. All rights reserved.</p>"
+            "<hr>"
+            "<p>Convert anything to anything — PDF, Word, PowerPoint, "
+            "Excel, images, HTML, Markdown, and more.</p>"
+            '<p><a href="https://github.com/SuperHanChinese-Cheng/Omni-Con">'
+            "github.com/SuperHanChinese-Cheng/Omni-Con</a></p>",
+        )
 
     def _build_ui(self) -> None:
         central = QWidget()

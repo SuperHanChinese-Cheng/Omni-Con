@@ -1,3 +1,5 @@
+# Copyright (c) 2026 Chenglin Qiu (SHC - Super Han Chinese). All rights reserved.
+# Licensed under the OmniCon Proprietary License. See LICENSE for details.
 """PDF split and merge operations using PyMuPDF."""
 
 import logging

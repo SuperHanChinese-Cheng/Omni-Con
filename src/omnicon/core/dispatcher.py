@@ -1,3 +1,5 @@
+# Copyright (c) 2026 Chenglin Qiu (SHC - Super Han Chinese). All rights reserved.
+# Licensed under the OmniCon Proprietary License. See LICENSE for details.
 """Conversion dispatcher — routes jobs through the engine fallback chain."""
 
 import logging

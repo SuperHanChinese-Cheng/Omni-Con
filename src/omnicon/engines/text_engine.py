@@ -1,3 +1,5 @@
+# Copyright (c) 2026 Chenglin Qiu (SHC - Super Han Chinese). All rights reserved.
+# Licensed under the OmniCon Proprietary License. See LICENSE for details.
 """Text extraction and data format conversion engine.
 
 Handles text extraction from Office documents (DOCX, PPTX, XLSX) and
