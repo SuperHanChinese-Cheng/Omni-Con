@@ -438,7 +438,8 @@ class MainWindow(QMainWindow):
             self._active_workers.append(worker)
             self._thread_pool.start(worker)
 
-        self._pending_files.clear()
+        # NOTE: Don't clear _pending_files — the user may want to convert
+        # the same files to another format without re-selecting them.
 
     def _on_job_started(self, job: ConversionJob) -> None:
         for w in self._job_widgets:

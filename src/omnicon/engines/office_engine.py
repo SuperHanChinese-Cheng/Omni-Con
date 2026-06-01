@@ -60,11 +60,30 @@ class OfficeEngine(BaseEngine):
 
         output_filter = self._get_output_filter(job.output_format.lower())
 
-        # PPTX/PPT/ODP -> PDF: include speaker notes pages in the output
-        if job.src_format in ("pptx", "ppt", "odp") and job.output_format.lower() == "pdf":
-            output_filter = (
-                'pdf:impress_pdf_Export:{"ExportNotesPages":{"type":"boolean","value":"true"}}'
-            )
+        # High-fidelity PDF export: embed fonts, max image quality, preserve layout
+        if job.output_format.lower() == "pdf":
+            if job.src_format in ("pptx", "ppt", "odp"):
+                # Presentation → PDF: include notes, embed fonts, max quality
+                output_filter = (
+                    'pdf:impress_pdf_Export:{'
+                    '"ExportNotesPages":{"type":"boolean","value":"true"},'
+                    '"IsSkipEmptyPages":{"type":"boolean","value":"false"},'
+                    '"MaxImageResolution":{"type":"long","value":"600"},'
+                    '"Quality":{"type":"long","value":"100"},'
+                    '"EmbedStandardFonts":{"type":"boolean","value":"true"}'
+                    '}'
+                )
+            else:
+                # Document → PDF: embed all fonts, max quality, preserve structure
+                output_filter = (
+                    'pdf:writer_pdf_Export:{'
+                    '"IsSkipEmptyPages":{"type":"boolean","value":"false"},'
+                    '"MaxImageResolution":{"type":"long","value":"600"},'
+                    '"Quality":{"type":"long","value":"100"},'
+                    '"EmbedStandardFonts":{"type":"boolean","value":"true"},'
+                    '"UseTaggedPDF":{"type":"boolean","value":"true"}'
+                    '}'
+                )
 
         cmd = [
             str(self._soffice_path),
@@ -129,13 +148,17 @@ class OfficeEngine(BaseEngine):
 
     @staticmethod
     def _get_output_filter(dst_fmt: str) -> str:
-        """Map output format to LibreOffice filter string."""
+        """Map output format to LibreOffice filter string.
+
+        Uses explicit filter names for high-fidelity output where possible.
+        """
         filters: dict[str, str] = {
+            # Use explicit filter names for better fidelity
             "pdf": "pdf",
-            "docx": "docx",
+            "docx": 'docx:"Office Open XML Text"',
             "doc": "doc",
-            "pptx": "pptx",
-            "xlsx": "xlsx",
+            "pptx": 'pptx:"Impress Office Open XML"',
+            "xlsx": 'xlsx:"Calc Office Open XML"',
             "odt": "odt",
             "odp": "odp",
             "ods": "ods",

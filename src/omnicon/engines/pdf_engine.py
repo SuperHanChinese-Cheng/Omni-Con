@@ -81,7 +81,16 @@ class PDFEngine(BaseEngine):
 
         cv = Converter(str(job.input_path))
         try:
-            cv.convert(str(output_path), multi_processing=False)
+            cv.convert(
+                str(output_path),
+                multi_processing=False,
+                # Fidelity settings: preserve spacing, fonts, and layout
+                min_section_height=20,       # detect smaller sections
+                connected_border_tolerance=0.5,  # tighter border detection
+                line_overlap_threshold=0.9,  # stricter line merging
+                line_break_free_space_ratio=0.1,  # preserve more line breaks
+                float_layout_tolerance=0.1,  # tighter float positioning
+            )
         except Exception as exc:
             raise EngineError(f"pdf2docx conversion failed: {exc}") from exc
         finally:
