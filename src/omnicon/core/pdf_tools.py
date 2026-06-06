@@ -170,11 +170,17 @@ def split_pdf(
         doc.close()
 
 
-def merge_pdfs(input_paths: list[Path], output_path: Path) -> Path:
-    """Merge multiple PDF files into a single PDF.
+def merge_pdfs(
+    input_entries: list[tuple[Path, str | None]],
+    output_path: Path,
+) -> Path:
+    """Merge multiple PDF files (or selected pages) into a single PDF.
+
+    Each entry is a (path, page_range) tuple. If page_range is None or empty,
+    all pages from that file are included.
 
     Args:
-        input_paths: Ordered list of PDF files to merge.
+        input_entries: Ordered list of (pdf_path, page_range_str_or_None).
         output_path: Path for the merged output PDF.
 
     Returns:
@@ -183,12 +189,12 @@ def merge_pdfs(input_paths: list[Path], output_path: Path) -> Path:
     Raises:
         PDFToolsError: If the operation fails.
     """
-    if len(input_paths) < 2:
-        raise PDFToolsError("Need at least 2 PDF files to merge.")
+    if len(input_entries) < 2:
+        raise PDFToolsError("Need at least 2 PDF entries to merge.")
 
     merged = fitz.open()  # New empty PDF
     try:
-        for pdf_path in input_paths:
+        for pdf_path, range_str in input_entries:
             if not pdf_path.exists():
                 raise PDFToolsError(f"File not found: {pdf_path}")
             if not pdf_path.suffix.lower() == ".pdf":
@@ -200,8 +206,22 @@ def merge_pdfs(input_paths: list[Path], output_path: Path) -> Path:
                 raise PDFToolsError(f"Cannot open {pdf_path.name}: {exc}") from exc
 
             try:
-                merged.insert_pdf(src)
-                logger.info("Merged: %s (%d pages)", pdf_path.name, len(src))
+                if range_str and range_str.strip():
+                    # Selective pages
+                    ranges = parse_page_ranges(range_str, len(src))
+                    for start, end in ranges:
+                        merged.insert_pdf(src, from_page=start, to_page=end)
+                    page_desc = range_str.strip()
+                else:
+                    # All pages
+                    merged.insert_pdf(src)
+                    page_desc = "all"
+                logger.info(
+                    "Merged: %s (%s, %d pages in source)",
+                    pdf_path.name,
+                    page_desc,
+                    len(src),
+                )
             finally:
                 src.close()
 
@@ -214,8 +234,8 @@ def merge_pdfs(input_paths: list[Path], output_path: Path) -> Path:
 
         merged.save(str(final_path))
         logger.info(
-            "Merge complete: %d files → %s (%d pages)",
-            len(input_paths),
+            "Merge complete: %d entries → %s (%d pages total)",
+            len(input_entries),
             final_path.name,
             len(merged),
         )
