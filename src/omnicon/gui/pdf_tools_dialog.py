@@ -29,37 +29,9 @@ from omnicon.core.pdf_tools import (
     merge_pdfs,
     split_pdf,
 )
+from omnicon.gui import theme
 
 logger = logging.getLogger(__name__)
-
-# ---------------------------------------------------------------------------
-# Shared styles
-# ---------------------------------------------------------------------------
-_BTN_PRIMARY = (
-    "QPushButton { background: #0078d4; color: white; font-size: 14px;"
-    " font-weight: bold; border-radius: 4px; padding: 6px 24px; }"
-    "QPushButton:disabled { background: #ccc; }"
-    "QPushButton:hover:!disabled { background: #106ebe; }"
-)
-
-_DROP_IDLE = (
-    "QLabel {"
-    "  border: 2px dashed #888; border-radius: 8px;"
-    "  background: #f8f8f8; color: #888; font-size: 13px; padding: 16px;"
-    "}"
-)
-
-_DROP_HOVER = (
-    "QLabel {"
-    "  border: 2px dashed #0078d4; border-radius: 8px;"
-    "  background: #e8f0fe; color: #0078d4; font-size: 13px; padding: 16px;"
-    "}"
-)
-
-_DROP_LOADED = (
-    "QLabel { border: 2px solid #107c10; border-radius: 8px;"
-    " background: #f0fff0; color: #107c10; font-size: 13px; padding: 16px; }"
-)
 
 
 def _accept_pdf_drop(event: QDragEnterEvent) -> bool:
@@ -101,7 +73,7 @@ class _SplitTab(QWidget):
         self._drop_label = QLabel("Drop a PDF here or click Browse")
         self._drop_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._drop_label.setMinimumHeight(70)
-        self._drop_label.setStyleSheet(_DROP_IDLE)
+        self._drop_label.setStyleSheet(theme.drop_zone_idle())
         layout.addWidget(self._drop_label)
 
         browse_btn = QPushButton("Browse...")
@@ -109,7 +81,7 @@ class _SplitTab(QWidget):
         layout.addWidget(browse_btn)
 
         self._page_info = QLabel("")
-        self._page_info.setStyleSheet("color: #0078d4; font-size: 12px;")
+        self._page_info.setStyleSheet(theme.label_accent())
         layout.addWidget(self._page_info)
 
         # --- Page range ---
@@ -120,7 +92,7 @@ class _SplitTab(QWidget):
             "Examples:  1-3, 5, 7-10  |  1-5  |  3  |  1,3,5-8\n"
             "Each range creates a separate PDF file."
         )
-        range_help.setStyleSheet("color: #888; font-size: 11px;")
+        range_help.setStyleSheet(theme.label_hint())
         range_layout.addWidget(range_help)
 
         self._range_input = QLineEdit()
@@ -133,7 +105,7 @@ class _SplitTab(QWidget):
         # --- Output ---
         out_row = QHBoxLayout()
         self._out_label = QLabel(f"Output: {self._output_dir}")
-        self._out_label.setStyleSheet("color: #666; font-size: 11px;")
+        self._out_label.setStyleSheet(theme.label_muted())
         out_row.addWidget(self._out_label)
         out_btn = QPushButton("Output folder...")
         out_btn.clicked.connect(self._pick_output_dir)
@@ -143,7 +115,7 @@ class _SplitTab(QWidget):
         self._split_btn = QPushButton("Split PDF")
         self._split_btn.setEnabled(False)
         self._split_btn.setMinimumHeight(38)
-        self._split_btn.setStyleSheet(_BTN_PRIMARY)
+        self._split_btn.setStyleSheet(theme.btn_primary())
         self._split_btn.clicked.connect(self._do_split)
         layout.addWidget(self._split_btn)
         layout.addStretch()
@@ -152,13 +124,13 @@ class _SplitTab(QWidget):
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         if _accept_pdf_drop(event):
             event.acceptProposedAction()
-            self._drop_label.setStyleSheet(_DROP_HOVER)
+            self._drop_label.setStyleSheet(theme.drop_zone_hover())
 
     def dragLeaveEvent(self, event: object) -> None:
         if self._input_path:
-            self._drop_label.setStyleSheet(_DROP_LOADED)
+            self._drop_label.setStyleSheet(theme.drop_zone_loaded())
         else:
-            self._drop_label.setStyleSheet(_DROP_IDLE)
+            self._drop_label.setStyleSheet(theme.drop_zone_idle())
 
     def dropEvent(self, event: QDropEvent) -> None:
         paths = _get_pdf_paths_from_drop(event)
@@ -169,7 +141,7 @@ class _SplitTab(QWidget):
     def _set_source(self, path: Path) -> None:
         self._input_path = path
         self._drop_label.setText(f"Selected: {path.name}")
-        self._drop_label.setStyleSheet(_DROP_LOADED)
+        self._drop_label.setStyleSheet(theme.drop_zone_loaded())
         try:
             count = get_pdf_page_count(path)
             self._page_info.setText(f"Pages: {count}")
@@ -232,7 +204,7 @@ class _MergeTab(QWidget):
         self._drop_label = QLabel("Drop PDF files here or click Add Files\nAll pages will be merged in order")
         self._drop_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._drop_label.setMinimumHeight(70)
-        self._drop_label.setStyleSheet(_DROP_IDLE)
+        self._drop_label.setStyleSheet(theme.drop_zone_idle())
         layout.addWidget(self._drop_label)
 
         # --- File list (simple text list) ---
@@ -263,7 +235,7 @@ class _MergeTab(QWidget):
         # --- Output ---
         out_row = QHBoxLayout()
         self._out_label = QLabel(f"Output: {self._output_dir}")
-        self._out_label.setStyleSheet("color: #666; font-size: 11px;")
+        self._out_label.setStyleSheet(theme.label_muted())
         out_row.addWidget(self._out_label)
         out_btn = QPushButton("Output folder...")
         out_btn.clicked.connect(self._pick_output_dir)
@@ -279,7 +251,7 @@ class _MergeTab(QWidget):
 
         self._merge_btn = QPushButton("Merge All")
         self._merge_btn.setMinimumHeight(38)
-        self._merge_btn.setStyleSheet(_BTN_PRIMARY)
+        self._merge_btn.setStyleSheet(theme.btn_primary())
         self._merge_btn.clicked.connect(self._do_merge)
         layout.addWidget(self._merge_btn)
         layout.addStretch()
@@ -288,13 +260,13 @@ class _MergeTab(QWidget):
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         if _accept_pdf_drop(event):
             event.acceptProposedAction()
-            self._drop_label.setStyleSheet(_DROP_HOVER)
+            self._drop_label.setStyleSheet(theme.drop_zone_hover())
 
     def dragLeaveEvent(self, event: object) -> None:
-        self._drop_label.setStyleSheet(_DROP_IDLE)
+        self._drop_label.setStyleSheet(theme.drop_zone_idle())
 
     def dropEvent(self, event: QDropEvent) -> None:
-        self._drop_label.setStyleSheet(_DROP_IDLE)
+        self._drop_label.setStyleSheet(theme.drop_zone_idle())
         for path in _get_pdf_paths_from_drop(event):
             self._add_pdf(path)
 
@@ -315,11 +287,7 @@ class _MergeTab(QWidget):
 
         remove_btn = QPushButton("X")
         remove_btn.setFixedSize(24, 24)
-        remove_btn.setStyleSheet(
-            "QPushButton { background: #d13438; color: white; font-weight: bold;"
-            " border-radius: 4px; font-size: 11px; }"
-            "QPushButton:hover { background: #a4262c; }"
-        )
+        remove_btn.setStyleSheet(theme.btn_remove())
         idx = len(self._pdf_paths) - 1
         remove_btn.clicked.connect(lambda checked, r=row, i=idx: self._remove(r, i))
         row_layout.addWidget(remove_btn)
@@ -409,17 +377,11 @@ class _SplitMergeFileRow(QWidget):
         # Remove
         remove_btn = QPushButton("X")
         remove_btn.setFixedSize(28, 28)
-        remove_btn.setStyleSheet(
-            "QPushButton { background: #d13438; color: white; font-weight: bold;"
-            " border-radius: 4px; } QPushButton:hover { background: #a4262c; }"
-        )
+        remove_btn.setStyleSheet(theme.btn_remove())
         remove_btn.clicked.connect(self._remove_self)
         row.addWidget(remove_btn)
 
-        self.setStyleSheet(
-            "QWidget { background: #fafafa; border: 1px solid #e0e0e0;"
-            " border-radius: 4px; }"
-        )
+        self.setStyleSheet(theme.file_row())
 
     @property
     def page_range(self) -> str | None:
@@ -449,7 +411,7 @@ class _SplitMergeTab(QWidget):
             "Drop multiple PDFs below, then choose which pages from each.\n"
             "Selected pages are combined into one output PDF."
         )
-        hint.setStyleSheet("color: #555; font-size: 12px;")
+        hint.setStyleSheet(theme.label_hint())
         hint.setWordWrap(True)
         layout.addWidget(hint)
 
@@ -457,7 +419,7 @@ class _SplitMergeTab(QWidget):
         self._drop_label = QLabel("Drop PDFs here or click Add Files")
         self._drop_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._drop_label.setMinimumHeight(55)
-        self._drop_label.setStyleSheet(_DROP_IDLE)
+        self._drop_label.setStyleSheet(theme.drop_zone_idle())
         layout.addWidget(self._drop_label)
 
         # --- File rows (scrollable) ---
@@ -485,7 +447,7 @@ class _SplitMergeTab(QWidget):
         # --- Output ---
         out_row = QHBoxLayout()
         self._out_label = QLabel(f"Output: {self._output_dir}")
-        self._out_label.setStyleSheet("color: #666; font-size: 11px;")
+        self._out_label.setStyleSheet(theme.label_muted())
         out_row.addWidget(self._out_label)
         out_btn = QPushButton("Output folder...")
         out_btn.clicked.connect(self._pick_output_dir)
@@ -502,11 +464,7 @@ class _SplitMergeTab(QWidget):
         # --- Build button ---
         self._build_btn = QPushButton("Build PDF")
         self._build_btn.setMinimumHeight(40)
-        self._build_btn.setStyleSheet(
-            "QPushButton { background: #107c10; color: white; font-size: 15px;"
-            " font-weight: bold; border-radius: 4px; padding: 6px 24px; }"
-            "QPushButton:hover { background: #0b6a0b; }"
-        )
+        self._build_btn.setStyleSheet(theme.btn_build())
         self._build_btn.clicked.connect(self._do_build)
         layout.addWidget(self._build_btn)
 
@@ -514,13 +472,13 @@ class _SplitMergeTab(QWidget):
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         if _accept_pdf_drop(event):
             event.acceptProposedAction()
-            self._drop_label.setStyleSheet(_DROP_HOVER)
+            self._drop_label.setStyleSheet(theme.drop_zone_hover())
 
     def dragLeaveEvent(self, event: object) -> None:
-        self._drop_label.setStyleSheet(_DROP_IDLE)
+        self._drop_label.setStyleSheet(theme.drop_zone_idle())
 
     def dropEvent(self, event: QDropEvent) -> None:
-        self._drop_label.setStyleSheet(_DROP_IDLE)
+        self._drop_label.setStyleSheet(theme.drop_zone_idle())
         for path in _get_pdf_paths_from_drop(event):
             self._add_pdf(path)
 

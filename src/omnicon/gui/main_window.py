@@ -37,6 +37,7 @@ from omnicon.engines.table_engine import TableEngine
 from omnicon.engines.text_engine import TextEngine
 from omnicon.gui.pdf_tools_dialog import PDFToolsDialog
 from omnicon.gui.settings_dialog import SettingsDialog, load_default_output_dir, load_libreoffice_path
+from omnicon.gui import theme
 from omnicon.utils.updater import UpdateWorker
 
 logger = logging.getLogger(__name__)
@@ -83,28 +84,10 @@ class DropZone(QLabel):
 
     def _set_idle_style(self) -> None:
         self.setText("Drop files here\nor click Browse")
-        self.setStyleSheet(
-            "QLabel {"
-            "  border: 2px dashed #888;"
-            "  border-radius: 12px;"
-            "  background: #f8f8f8;"
-            "  color: #666;"
-            "  font-size: 16px;"
-            "  padding: 20px;"
-            "}"
-        )
+        self.setStyleSheet(theme.drop_zone_idle().replace("8px", "12px").replace("13px", "16px"))
 
     def _set_hover_style(self) -> None:
-        self.setStyleSheet(
-            "QLabel {"
-            "  border: 2px dashed #0078d4;"
-            "  border-radius: 12px;"
-            "  background: #e8f0fe;"
-            "  color: #0078d4;"
-            "  font-size: 16px;"
-            "  padding: 20px;"
-            "}"
-        )
+        self.setStyleSheet(theme.drop_zone_hover().replace("8px", "12px").replace("13px", "16px"))
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         if event.mimeData().hasUrls():
@@ -160,9 +143,9 @@ class JobWidget(QWidget):
         self.progress_bar.setValue(self.job.progress)
 
         if self.job.status == JobStatus.DONE:
-            self.status_label.setStyleSheet("color: #107c10;")
+            self.status_label.setStyleSheet(theme.status_done())
         elif self.job.status == JobStatus.FAILED:
-            self.status_label.setStyleSheet("color: #d13438;")
+            self.status_label.setStyleSheet(theme.status_failed())
             if self.job.error_message:
                 self.status_label.setToolTip(self.job.error_message)
 
@@ -224,14 +207,7 @@ class MainWindow(QMainWindow):
             html_url: URL to the GitHub release page.
         """
         banner = QFrame(self.centralWidget())
-        banner.setStyleSheet(
-            "QFrame {"
-            "  background: #e8f4fd;"
-            "  border: 1px solid #b3d9f2;"
-            "  border-radius: 6px;"
-            "  padding: 6px 12px;"
-            "}"
-        )
+        banner.setStyleSheet(theme.update_banner())
         banner_layout = QHBoxLayout(banner)
         banner_layout.setContentsMargins(8, 4, 8, 4)
 
@@ -240,24 +216,14 @@ class MainWindow(QMainWindow):
             f'<a href="{html_url}">Download it here</a>.'
         )
         info_label.setOpenExternalLinks(True)
-        info_label.setStyleSheet("color: #0b5394; font-size: 12px;")
+        info_label.setStyleSheet(theme.update_banner_text())
         banner_layout.addWidget(info_label)
 
         banner_layout.addStretch()
 
         dismiss_btn = QPushButton("Dismiss")
         dismiss_btn.setFixedHeight(24)
-        dismiss_btn.setStyleSheet(
-            "QPushButton {"
-            "  background: transparent;"
-            "  color: #0b5394;"
-            "  border: 1px solid #0b5394;"
-            "  border-radius: 4px;"
-            "  padding: 2px 10px;"
-            "  font-size: 11px;"
-            "}"
-            "QPushButton:hover { background: #d0e8f7; }"
-        )
+        dismiss_btn.setStyleSheet(theme.update_banner_dismiss())
         dismiss_btn.clicked.connect(banner.deleteLater)
         banner_layout.addWidget(dismiss_btn)
 
@@ -319,11 +285,7 @@ class MainWindow(QMainWindow):
 
         self._pdf_tools_btn = QPushButton("PDF Tools")
         self._pdf_tools_btn.setToolTip("Split & Merge PDF files")
-        self._pdf_tools_btn.setStyleSheet(
-            "QPushButton { background: #e8e8e8; padding: 6px 14px;"
-            " border-radius: 4px; font-weight: bold; }"
-            "QPushButton:hover { background: #d0d0d0; }"
-        )
+        self._pdf_tools_btn.setStyleSheet(theme.btn_tool())
         self._pdf_tools_btn.clicked.connect(self._open_pdf_tools)
         controls.addWidget(self._pdf_tools_btn)
 
@@ -341,11 +303,7 @@ class MainWindow(QMainWindow):
 
         self._convert_btn = QPushButton("Convert")
         self._convert_btn.setEnabled(False)
-        self._convert_btn.setStyleSheet(
-            "QPushButton { background: #0078d4; color: white; padding: 6px 20px;"
-            " border-radius: 4px; font-weight: bold; }"
-            "QPushButton:disabled { background: #ccc; }"
-        )
+        self._convert_btn.setStyleSheet(theme.btn_primary())
         self._convert_btn.clicked.connect(self._start_conversion)
         controls.addWidget(self._convert_btn)
 
@@ -355,11 +313,11 @@ class MainWindow(QMainWindow):
         # hardcoding ~/Desktop.
         self._output_dir = load_default_output_dir()
         self._output_label = QLabel(f"Output: {self._output_dir}")
-        self._output_label.setStyleSheet("color: #666; font-size: 11px;")
+        self._output_label.setStyleSheet(theme.label_muted())
         main_layout.addWidget(self._output_label)
 
         queue_label = QLabel("Conversion Queue")
-        queue_label.setStyleSheet("font-weight: bold; font-size: 13px;")
+        queue_label.setStyleSheet(theme.label_queue_title())
         main_layout.addWidget(queue_label)
 
         scroll = QScrollArea()
